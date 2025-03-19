@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import styles from './App.module.css'
 
 const initialState = {
-  login: '',
+  checkPassword: '',
   email: '',
   password: '',
 }
 const initialError = {
-  loginError: null,
+  checkPasswordError: null,
   emailError: null,
   passwordError: null,
 }
@@ -33,35 +33,36 @@ const useStore = () => {
 }
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const loginRegex = /^[a-zA-Z0-9_-]{3,16}$/
 const passwordRegex =  /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~\\/-]).{8,}$/
 
 export const App = () => {
   const {getState, getError, updateState, updateError, resetState} = useStore()
+  const submitButtonRef = useRef(null)
 
   const onSubmit = (event) => {
     event.preventDefault()
     console.log('onSubmit called')
-    if (loginError || emailError || passwordError) {
+    if (checkPasswordError || emailError || passwordError) {
       return;
     }
-    sendData(getState)
+    sendData(getState())
   }
 
   const sendData = (formData) => {
     console.log(formData)
   }
 
-  const { emailError, loginError, passwordError } = getError()
-  const { email, login, password } = getState()
+  const { emailError, passwordError, checkPasswordError } = getError()
+  const {  email, password, checkPassword } = getState()
 
 
   const onChange = ({ target }) => { 
     updateState(target.name, target.value)
     switch (target.name) {
-      case 'login':{
-        const loginValid = loginRegex.test(target.value)
-        loginValid ? updateError('loginError', null) : updateError('loginError', 'Логин должен от 3 до 16 символов, буквы, цифры, подчеркивания, тире')
+      case 'checkPassword':{
+        const checkPasswordValid = target.value === password
+        checkPasswordValid ? updateError('checkPasswordError', null) : 
+        updateError('checkPasswordError', 'Неправильный пароль')
         break
       }
       case 'email':{
@@ -78,20 +79,16 @@ export const App = () => {
         default:
           break
     }
+    if (email !== '' && password !== '' && checkPassword !== '') {
+      submitButtonRef.current.focus();
+    }
   }
 
   return (
     <div className={styles.app}>
       <h1>Регистрация</h1>
       <form className={styles.form} onSubmit={onSubmit}>
-        <div className={styles['other-input']}>
-          <input className={`${styles['input-login']} ${styles.input}`}
-            name="login"
-            type="text"
-            value={login}
-            onChange={onChange}
-            placeholder="Логин"
-          />
+        
           <input className={`${styles['input-email']} ${styles.input}`}
             name="email"
             type="text"
@@ -99,27 +96,37 @@ export const App = () => {
             onChange={onChange}
             placeholder="Почта"
           />
-        </div>
+          <div className={styles['other-input']}>
+          <input className={`${styles['input-login']} ${styles.input}`}
+            name="password"
+            type="password"
+            value={password}
+            onChange={onChange}
+            placeholder="Пароль"
+          />
         <input className={`${styles['input-password']} ${styles.input}`}
-          name="password"
+          disabled={password === ''}
+          name="checkPassword"
           type="password"
-          value={password}
+          value={checkPassword}
           onChange={onChange}
-          placeholder="Пароль"
+          placeholder="Повтор Пароля"
         />
-      </form>
+        </div>
       <div className={styles.btns}>
         <button 
          className={styles['glow-on-hover']}
+         ref = {submitButtonRef}
          type="submit" 
-         disabled={loginError !== null || emailError !== null || passwordError !== null}
+         disabled={checkPasswordError !== null || emailError !== null || passwordError !== null}
          >
           Зарегистрироваться
         </button>
         <button className={styles['glow-on-hover']} onClick={resetState}>Сброс</button>
       </div>
+      </form>
       <div>
-      {loginError && <div className={styles.errorLabel}>{loginError}</div>}
+      {checkPasswordError && <div className={styles.errorLabel}>{checkPasswordError}</div>}
       {emailError && <div className={styles.errorLabel}>{emailError}</div>}
       {passwordError && (<div className={styles.errorLabel}>{passwordError}</div>)}
       </div>
